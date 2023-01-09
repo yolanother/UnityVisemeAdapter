@@ -1,6 +1,9 @@
 {
-    "name": "",
-    "rootNamespace": "",
+    "name": "DoubTech.VisemeAdapter.Editor",
+    "rootNamespace": "DoubTech.VisemeAdapter",
+    "references": [
+        "GUID:f7d775b3d7650814882a547c28284e2b"
+    ],
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

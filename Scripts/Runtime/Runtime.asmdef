@@ -1,6 +1,6 @@
 {
-    "name": "",
-    "rootNamespace": "",
+    "name": "DoubTech.VisemeAdapter",
+    "rootNamespace": "DoubTech.VisemeAdapter",
     "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,

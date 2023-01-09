@@ -1,6 +1,6 @@
 {
-  "name": "",
-  "displayName": "",
+  "name": "com.doubtech.unity.visemeadapter",
+  "displayName": "DoubTech - Viseme Adapter",
   "version": "0.0.1",
   "unity": "2019.4",
   "description": "",
@@ -8,7 +8,14 @@
   "category": "Scripts",
   "type": "tool",
   "author": {
-    "name": "",
+    "name": "Doubling Technologies",
     "url": ""
-  }
+  },
+  "samples": [
+    {
+      "path": "Integrations/Oculus",
+      "displayName": "Oculus Integration",
+      "description": "Integrates the Oculus OVR Lipsync with the Viseme Adapter"
+    }
+  ]
 }
