@@ -42,6 +42,7 @@ namespace DoubTech.VisemeAdapter
         [Button]
         public void SetViseme(string viseme)
         {
+            StopAllCoroutines();
             if (Application.isPlaying)
             {
                 StartCoroutine(Transition(viseme));
