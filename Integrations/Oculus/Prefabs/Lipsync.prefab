@@ -151,7 +151,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1329015225449804056}
-  m_Enabled: 0
+  m_Enabled: 1
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: f43c520a9bad8a3489109c869f454576, type: 3}
   m_Name: 
@@ -197,6 +197,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: cd8d109aa7f243688df708a8c05915d5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  lipSyncContext: {fileID: 0}
   visemeMapping:
   - sil
   - PP
