@@ -142,9 +142,9 @@ namespace DoubTech.Lipsync
                             {
                                 var selected = EditorGUILayout.ToggleLeft(blendShape.name,
                                     visemeConfig.HasReference(blendshape.blendshape));
-                                blendshape.selected = selected;
                                 if (blendshape.selected != selected)
                                 {
+                                    blendshape.selected = selected;
                                     if (selected) visemeConfig.AddReference(blendshape.blendshape);
                                     if (!selected) visemeConfig.RemoveReference(blendshape.blendshape);
                                     EditorUtility.SetDirty(visemeConfig);
