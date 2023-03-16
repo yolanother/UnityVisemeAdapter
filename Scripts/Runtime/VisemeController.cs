@@ -1,7 +1,6 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using DoubTech.VisemeAdapter.Data;
-using Sirenix.OdinInspector;
 using UnityEngine;
 
 namespace DoubTech.VisemeAdapter
@@ -39,7 +38,6 @@ namespace DoubTech.VisemeAdapter
             }
         }
         
-        [Button]
         public void SetViseme(string viseme)
         {
             StopAllCoroutines();

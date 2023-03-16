@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using UnityEditor;
 using UnityEngine;
 
@@ -11,6 +10,7 @@ namespace DoubTech.VisemeAdapter.Data
         [SerializeField] internal GameObject baseCharacterPrefab;
         [SerializeField] public List<VisemeMappingData> visemeMappings = new List<VisemeMappingData>();
         [SerializeField] public List<Blendshape> blendshapeReferences = new List<Blendshape>();
+        [SerializeField] public float visemeMaxValue = 100;
 
         private Dictionary<string, Blendshape> _blendshapeReferenceMap;
         public Dictionary<string, Blendshape> BlendshapeReferenceMap
@@ -87,43 +87,36 @@ namespace DoubTech.VisemeAdapter.Data
         private bool initialized;
         private SkinnedMeshRenderer[] skinnedMeshRenderers;
 
-        private void OnValidate()
+        private SkinnedMeshRenderer[] SkinnedMeshRenderers
         {
-            Initialize();
-        }
-
-        private void OnEnable()
-        {
-            Initialize();
-        }
-        
-        private void Initialize()
-        {
-            initialized = true;
-            visemeConfig = (VisemeConfig)target;
-            if (visemeConfig.baseCharacterPrefab)
+            get
             {
-                skinnedMeshRenderers = visemeConfig.baseCharacterPrefab.GetComponents<SkinnedMeshRenderer>();
-                foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
+                var visemeConfig = target as VisemeConfig;
+                if (null == skinnedMeshRenderers && visemeConfig.baseCharacterPrefab)
                 {
-                    var mesh = skinnedMeshRenderer.sharedMesh;
-                    var blendShapes = mesh.blendShapeCount;
-                    for (int i = 0; i < blendShapes; i++)
+                    skinnedMeshRenderers = visemeConfig.baseCharacterPrefab.GetComponents<SkinnedMeshRenderer>();
+                    foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
                     {
-                        var blendShapeName = mesh.GetBlendShapeName(i);
-                        Debug.Log(blendShapeName);
+                        var mesh = skinnedMeshRenderer.sharedMesh;
+                        var blendShapes = mesh.blendShapeCount;
+                        for (int i = 0; i < blendShapes; i++)
+                        {
+                            var blendShapeName = mesh.GetBlendShapeName(i);
+                            Debug.Log(blendShapeName);
+                        }
                     }
                 }
+
+                return skinnedMeshRenderers;
             }
         }
 
         public override void OnInspectorGUI()
         {
-            if(!initialized) Initialize();
             base.OnInspectorGUI();
 
             GUILayout.Label("Skinned Mesh Renderers", EditorStyles.boldLabel);
-            foreach (var skinnedMeshRenderer in skinnedMeshRenderers)
+            foreach (var skinnedMeshRenderer in SkinnedMeshRenderers)
             {
                 GUILayout.Label(skinnedMeshRenderer.name);
             }

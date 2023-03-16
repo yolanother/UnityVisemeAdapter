@@ -156,7 +156,7 @@ namespace DoubTech.Lipsync
                             }
 
                             var lastV = blendshape.Value;
-                            var v = GUILayout.HorizontalSlider(lastV, 0, 100, GUILayout.Width(100));
+                            var v = GUILayout.HorizontalSlider(lastV, 0, visemeConfig.visemeMaxValue, GUILayout.Width(100));
                             if (Math.Abs(v - lastV) > 0.0001f) blendshape.Value = v;
                             EditorGUILayout.EndHorizontal();
                         }
