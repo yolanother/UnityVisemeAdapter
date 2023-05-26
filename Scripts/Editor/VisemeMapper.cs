@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using DoubTech.VisemeAdapter.Data;
@@ -19,11 +20,16 @@ namespace DoubTech.Lipsync
         private Vector2 blendSelectionBoxSroll;
         private VisemeConfig visemeConfig;
         private ReorderableList visemeList;
+        private bool _linkSides;
         
         private Dictionary<Blendshape, BlendshapeState> activeBlendshapes = new Dictionary<Blendshape, BlendshapeState>();
+        private SortedList<string, BlendshapeState> activeLeftBlendshapes = new SortedList<string, BlendshapeState>();
+        private SortedList<string, BlendshapeState> activeRightBlendshapes = new SortedList<string, BlendshapeState>();
+        private SortedList<string, BlendshapeState> activeCenterBlendshapes = new SortedList<string, BlendshapeState>();
         private string newVisemeName;
         private VisemeMappingData activeViseme;
         private bool showAllBlendshapes;
+        private int splitMode = 0;
 
         private class BlendshapeState
         {
@@ -80,9 +86,12 @@ namespace DoubTech.Lipsync
                     skinnedMeshRendererNames.Add(skinnedMeshRenderer.name);
                     List<Blendshape> blendShapeIndexes = new List<Blendshape>();
                     blendShapes.Add(blendShapeIndexes);
+                    string commonName = null;
+                    List<BlendshapeState> states = new List<BlendshapeState>();
                     for (int i = 0; i < blendShapeCounts; i++)
                     {
                         var blendShapeName = mesh.GetBlendShapeName(i);
+                        
                         var blendShape = new Blendshape()
                         {
                             name = blendShapeName,
@@ -90,12 +99,49 @@ namespace DoubTech.Lipsync
                             parentSkinnedMeshRenderer = skinnedMeshRenderer.name
                         };
                         blendShapeIndexes.Add(blendShape);
-                        activeBlendshapes[blendShape] = new BlendshapeState()
+                        var state = new BlendshapeState()
                         {
                             blendshape = blendShape,
                             renderer = skinnedMeshRenderer,
                             selected = false
                         };
+                        activeBlendshapes[blendShape] = state;
+
+                        if (visemeConfig.HasReference(blendShape))
+                        {
+                            if (null == commonName) commonName = blendShapeCounts > 0 ? mesh.GetBlendShapeName(0) : "";
+                            for (int len = commonName.Length; len > 0; len--)
+                            {
+                                if (commonName == blendShape.name.Substring(0,
+                                        Mathf.Min(commonName.Length, blendShape.name.Length))) break;
+
+                                commonName = commonName.Substring(0, len - 1);
+                            }
+
+                            states.Add(state);
+                        }
+                    }
+
+                    for (int i = 0; i < states.Count; i++)
+                    {
+                        var state = states[i];
+                        var blendShapeName = state.blendshape.name;
+                        if (blendShapeName.ToLower().Contains("left"))
+                        {
+                            var shortName = blendShapeName.Replace("left", "", StringComparison.OrdinalIgnoreCase)
+                                .Substring(commonName.Length);
+                            activeLeftBlendshapes[shortName] = state;
+                        } else if (blendShapeName.ToLower().Contains("right"))
+                        {
+                            var shortName = blendShapeName.Replace("right", "", StringComparison.OrdinalIgnoreCase)
+                                .Substring(commonName.Length);
+                            activeRightBlendshapes[shortName] = state;
+                        }
+                        else
+                        {
+                            var shortName = blendShapeName.Substring(commonName.Length);
+                            activeCenterBlendshapes[shortName] = state;
+                        }
                     }
                 }
             }
@@ -131,38 +177,58 @@ namespace DoubTech.Lipsync
                 GUILayout.EndHorizontal();
                 if (skinnedMeshRendererIndex < blendShapes.Count)
                 {
-                    blendSelectionBoxSroll = GUILayout.BeginScrollView(blendSelectionBoxSroll, EditorStyles.helpBox,
-                        GUILayout.MaxHeight(200));
-                    foreach (var blendShape in blendShapes[skinnedMeshRendererIndex])
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("All")) splitMode = 0;
+                    if (GUILayout.Button("Split")) splitMode = 1;
+                    if (splitMode == 1)
                     {
-                        if (activeBlendshapes.TryGetValue(blendShape, out var blendshape) && (visemeConfig.HasReference(blendshape.blendshape) || showAllBlendshapes))
-                        {
-                            EditorGUILayout.BeginHorizontal();
-                            if (showAllBlendshapes)
-                            {
-                                var selected = EditorGUILayout.ToggleLeft(blendShape.name,
-                                    visemeConfig.HasReference(blendshape.blendshape));
-                                if (blendshape.selected != selected)
-                                {
-                                    blendshape.selected = selected;
-                                    if (selected) visemeConfig.AddReference(blendshape.blendshape);
-                                    if (!selected) visemeConfig.RemoveReference(blendshape.blendshape);
-                                    EditorUtility.SetDirty(visemeConfig);
-                                }
-                            }
-                            else
-                            {
-                                GUILayout.Label(blendShape.name);
-                            }
-
-                            var lastV = blendshape.Value;
-                            var v = GUILayout.HorizontalSlider(lastV, 0, visemeConfig.visemeMaxValue, GUILayout.Width(100));
-                            if (Math.Abs(v - lastV) > 0.0001f) blendshape.Value = v;
-                            EditorGUILayout.EndHorizontal();
-                        }
+                        _linkSides = GUILayout.Toggle(_linkSides, "Link Left and Right");
                     }
+                    GUILayout.EndHorizontal();
 
-                    GUILayout.EndScrollView();
+                    if (splitMode == 0)
+                    {
+                        blendSelectionBoxSroll =
+                            GUILayout.BeginScrollView(blendSelectionBoxSroll, EditorStyles.helpBox);
+                        foreach (var blendShape in blendShapes[skinnedMeshRendererIndex])
+                        {
+                            if (activeBlendshapes.TryGetValue(blendShape, out var blendshape) &&
+                                (visemeConfig.HasReference(blendshape.blendshape) || showAllBlendshapes))
+                            {
+                                DrawBlendshape(blendshape.blendshape.name, blendshape);
+                            }
+                        }
+
+                        GUILayout.EndScrollView();
+                    }
+                    else
+                    {
+                        blendSelectionBoxSroll =
+                            GUILayout.BeginScrollView(blendSelectionBoxSroll, EditorStyles.helpBox);
+                        GUILayout.BeginHorizontal();
+                        GUILayout.BeginVertical();
+                        foreach (var kvp in activeLeftBlendshapes)
+                        {
+                            DrawBlendshape(kvp.Key, kvp.Value);
+                        }
+                        GUILayout.EndVertical();
+                        GUILayout.FlexibleSpace();
+                        GUILayout.BeginVertical();
+                        foreach (var kvp in activeCenterBlendshapes)
+                        {
+                            DrawBlendshape(kvp.Key, kvp.Value);
+                        }
+                        GUILayout.EndVertical();
+                        GUILayout.FlexibleSpace();
+                        GUILayout.BeginVertical();
+                        foreach (var kvp in activeRightBlendshapes)
+                        {
+                            DrawBlendshape(kvp.Key, kvp.Value);
+                        }
+                        GUILayout.EndVertical();
+                        GUILayout.EndHorizontal();
+                        GUILayout.EndScrollView();
+                    }
                 }
             }
 
@@ -185,6 +251,53 @@ namespace DoubTech.Lipsync
             GUILayout.EndHorizontal();
             
             visemeList?.DoLayoutList();
+        }
+
+        private void DrawBlendshape(string name, BlendshapeState blendshape)
+        {
+            EditorGUILayout.BeginHorizontal();
+            if (showAllBlendshapes)
+            {
+                var selected = EditorGUILayout.ToggleLeft(name,
+                    visemeConfig.HasReference(blendshape.blendshape));
+                if (blendshape.selected != selected)
+                {
+                    blendshape.selected = selected;
+                    if (selected) visemeConfig.AddReference(blendshape.blendshape);
+                    if (!selected) visemeConfig.RemoveReference(blendshape.blendshape);
+                    EditorUtility.SetDirty(visemeConfig);
+                }
+            }
+            else
+            {
+                GUILayout.Label(name);
+            }
+
+            var lastV = blendshape.Value;
+            var v = GUILayout.HorizontalSlider(lastV, 0, visemeConfig.visemeMaxValue,
+                GUILayout.Width(100));
+            if (Math.Abs(v - lastV) > 0.0001f)
+            {
+                if (_linkSides)
+                {
+                    var isLeft = blendshape.blendshape.name.Contains("left", StringComparison.OrdinalIgnoreCase);
+                    var isRight = blendshape.blendshape.name.Contains("right", StringComparison.OrdinalIgnoreCase);
+
+                    if (isLeft || isRight)
+                    {
+                        if (activeLeftBlendshapes.TryGetValue(name, out var left))
+                        {
+                            left.Value = v;
+                        }
+                        if (activeRightBlendshapes.TryGetValue(name, out var right))
+                        {
+                            right.Value = v;
+                        }
+                    }
+                }
+                blendshape.Value = v;
+            }
+            EditorGUILayout.EndHorizontal();
         }
 
         private VisemeMappingData ApplyCurrentState(VisemeMappingData visemeMappingData)

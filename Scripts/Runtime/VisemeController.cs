@@ -1,4 +1,5 @@
-﻿using System.Collections;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using DoubTech.VisemeAdapter.Data;
 using UnityEngine;
@@ -8,10 +9,13 @@ namespace DoubTech.VisemeAdapter
     public class VisemeController : MonoBehaviour
     {
         [SerializeField] private VisemeConfig visemeConfig;
-        [SerializeField] private float transitionSpeed = 1f;
+        [SerializeField] private float transitionSpeed = .25f;
         [SerializeField] private GameObject skinnedMeshRoot;
+        [SerializeField] private float valueMultiplier = 1;
 
         private Dictionary<string, SkinnedMeshRenderer> _skinnedMeshRenderers;
+        private List<KeyValuePair<SkinnedMeshRenderer,BlendshapeValue>> activeShapes;
+        private float time;
 
         private Dictionary<string, SkinnedMeshRenderer> SkinnedMeshRenderers
         {
@@ -53,7 +57,7 @@ namespace DoubTech.VisemeAdapter
 
         private IEnumerator Transition(string viseme)
         {
-            List<KeyValuePair<SkinnedMeshRenderer, BlendshapeValue>> activeShapes = new List<KeyValuePair<SkinnedMeshRenderer, BlendshapeValue>>();
+            activeShapes = new List<KeyValuePair<SkinnedMeshRenderer, BlendshapeValue>>();
             if(visemeConfig.VisemeBlendshapes.TryGetValue(viseme, out var blendshapes))
             {
                 foreach (var blendshapeValue in blendshapes.blendshapeValues)
@@ -65,10 +69,9 @@ namespace DoubTech.VisemeAdapter
                 }
             }
 
-            float time = Time.deltaTime;
+            time = Time.deltaTime;
             while (time < transitionSpeed)
             {
-                
                 foreach (var activeShape in activeShapes)
                 {
                     var current = activeShape.Key.GetBlendShapeWeight(activeShape.Value.blendshape.index);
@@ -79,6 +82,20 @@ namespace DoubTech.VisemeAdapter
 
                 time += Time.deltaTime;
                 yield return null;
+            }
+        }
+
+        private void LateUpdate()
+        {
+            if (time < transitionSpeed && time > 0)
+            {
+                foreach (var activeShape in activeShapes)
+                {
+                    var current = activeShape.Key.GetBlendShapeWeight(activeShape.Value.blendshape.index);
+                    var target = activeShape.Value.value;
+                    var value = Mathf.Lerp(current, target, time / transitionSpeed);
+                    activeShape.Key.SetBlendShapeWeight(activeShape.Value.blendshape.index, value * valueMultiplier);
+                }
             }
         }
 
